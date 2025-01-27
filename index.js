@@ -4,8 +4,13 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
-const ROKU_IP = process.env.ROKU_IP || '192.168.1.37'; // We'll update this later
-const API_KEY = process.env.API_KEY || 'default-key'; // We'll set this later
+const ROKU_IP = process.env.ROKU_IP || '192.168.1.37';
+const API_KEY = process.env.API_KEY || 'default-key';
+
+// Log environment variables (excluding sensitive data)
+console.log('Server starting with configuration:');
+console.log('ROKU_IP:', ROKU_IP);
+console.log('PORT:', PORT);
 
 // Middleware
 app.use(express.json());
@@ -13,7 +18,9 @@ app.use(express.json());
 // Verify API key
 const checkApiKey = (req, res, next) => {
     const providedKey = req.headers['x-api-key'];
+    console.log('Received API key:', providedKey);
     if (providedKey !== API_KEY) {
+        console.log('API key mismatch');
         return res.status(401).json({ error: 'Invalid API key' });
     }
     next();
@@ -24,11 +31,14 @@ app.post('/roku-command', checkApiKey, async (req, res) => {
     const { action } = req.body;
     
     try {
-        console.log(`Sending command: ${action} to Roku`);
+        const rokuUrl = `http://${ROKU_IP}:8060/keypress/${action}`;
+        console.log('Attempting to send command to URL:', rokuUrl);
         
-        const response = await fetch(`http://${ROKU_IP}:8060/keypress/${action}`, {
+        const response = await fetch(rokuUrl, {
             method: 'POST'
         });
+        
+        console.log('Roku response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,17 +48,27 @@ app.post('/roku-command', checkApiKey, async (req, res) => {
         res.json({ success: true, message: 'Command sent to Roku' });
         
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Detailed error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+        });
+        res.status(500).json({ 
+            success: false, 
+            error: error.message,
+            errorCode: error.code
+        });
     }
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ 
+        status: 'ok',
+        roku_ip: ROKU_IP,
+        port: PORT
+    });
 });
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () =>
