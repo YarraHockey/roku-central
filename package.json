@@ -1,0 +1,13 @@
+{
+  "name": "roku-control",
+  "version": "1.0.0",
+  "description": "Roku TV control server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.9"
+  }
+}
