@@ -2,52 +2,61 @@ const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
-// Environment variables
 const PORT = process.env.PORT || 3000;
 const ROKU_PUBLIC_IP = process.env.ROKU_PUBLIC_IP;
 const ROKU_PUBLIC_PORT = process.env.ROKU_PUBLIC_PORT || '9060';
 const API_KEY = process.env.API_KEY || 'default-key';
 
-// Log environment variables (excluding sensitive data)
 console.log('Server starting with configuration:');
 console.log('ROKU_PUBLIC_IP:', ROKU_PUBLIC_IP);
 console.log('ROKU_PUBLIC_PORT:', ROKU_PUBLIC_PORT);
 console.log('PORT:', PORT);
 
-// Middleware
 app.use(express.json());
 
-// Verify API key
 const checkApiKey = (req, res, next) => {
     const providedKey = req.headers['x-api-key'];
-    console.log('Received API key:', providedKey);
     if (providedKey !== API_KEY) {
-        console.log('API key mismatch');
         return res.status(401).json({ error: 'Invalid API key' });
     }
     next();
 };
 
-// Main control endpoint
 app.post('/roku-command', checkApiKey, async (req, res) => {
     const { action } = req.body;
     
     try {
         const rokuUrl = `http://${ROKU_PUBLIC_IP}:${ROKU_PUBLIC_PORT}/keypress/${action}`;
-        console.log('Attempting to send command to URL:', rokuUrl);
+        console.log('Sending command to:', rokuUrl);
         
         const response = await fetch(rokuUrl, {
             method: 'POST'
         });
-        
-        console.log('Roku response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         console.log('Command sent successfully');
-        res.json({ success: true, message: 'Command sent to Roku' });
+        res.json({ success: true });
         
     } catch (error) {
-        console.error('
+        console.log('Error:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok',
+        roku_ip: ROKU_PUBLIC_IP,
+        roku_port: ROKU_PUBLIC_PORT
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
