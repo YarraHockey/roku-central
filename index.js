@@ -4,12 +4,14 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
-const ROKU_IP = process.env.ROKU_IP || '192.168.1.37';
+const ROKU_PUBLIC_IP = process.env.ROKU_PUBLIC_IP;
+const ROKU_PUBLIC_PORT = process.env.ROKU_PUBLIC_PORT || '9060';
 const API_KEY = process.env.API_KEY || 'default-key';
 
 // Log environment variables (excluding sensitive data)
 console.log('Server starting with configuration:');
-console.log('ROKU_IP:', ROKU_IP);
+console.log('ROKU_PUBLIC_IP:', ROKU_PUBLIC_IP);
+console.log('ROKU_PUBLIC_PORT:', ROKU_PUBLIC_PORT);
 console.log('PORT:', PORT);
 
 // Middleware
@@ -31,7 +33,7 @@ app.post('/roku-command', checkApiKey, async (req, res) => {
     const { action } = req.body;
     
     try {
-        const rokuUrl = `http://${ROKU_IP}:8060/keypress/${action}`;
+        const rokuUrl = `http://${ROKU_PUBLIC_IP}:${ROKU_PUBLIC_PORT}/keypress/${action}`;
         console.log('Attempting to send command to URL:', rokuUrl);
         
         const response = await fetch(rokuUrl, {
@@ -48,27 +50,4 @@ app.post('/roku-command', checkApiKey, async (req, res) => {
         res.json({ success: true, message: 'Command sent to Roku' });
         
     } catch (error) {
-        console.error('Detailed error:', {
-            message: error.message,
-            stack: error.stack,
-            code: error.code
-        });
-        res.status(500).json({ 
-            success: false, 
-            error: error.message,
-            errorCode: error.code
-        });
-    }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok',
-        roku_ip: ROKU_IP,
-        port: PORT
-    });
-});
-
-// Start server
-app.listen(PORT, () =>
+        console.error('
