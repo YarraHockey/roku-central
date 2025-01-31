@@ -30,8 +30,16 @@ app.post('/roku-command', checkApiKey, async (req, res) => {
         console.log('Sending command to:', rokuUrl);
         
         const response = await fetch(rokuUrl, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': '0',
+                'Accept': '*/*'
+            }
         });
+        
+        console.log('Roku response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
